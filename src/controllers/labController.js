@@ -31,6 +31,28 @@ const createLabOrder = async (req, res) => {
       status: 'Pending'
     });
 
+    // AUTO-COMPLETE BOT (Simulates the Lab Technician working)
+    setTimeout(async () => {
+      try {
+        let mockResult = 'Result: Normal';
+        if (testType === 'Complete Blood Count') mockResult = 'WBC: 5.4, RBC: 4.8';
+        if (testType === 'Lipid Panel') mockResult = 'Cholesterol: 180, LDL: 100';
+        if (testType === 'Urinalysis') mockResult = 'Color: Pale Yellow, Clarity: Clear';
+        if (testType === 'COVID-19 PCR') mockResult = 'Result: Negative';
+        if (testType === 'Comprehensive Metabolic Panel') mockResult = 'Glucose: 90, Calcium: 9.2';
+        if (testType === 'HbA1c') mockResult = 'Result: 5.2%';
+
+        await LabResult.findByIdAndUpdate(newOrder._id, {
+          status: 'Completed',
+          resultValue: mockResult,
+          dateCollected: new Date().toISOString()
+        });
+        console.log(`Auto-completed lab order ${orderId} for ${testType}`);
+      } catch(err) {
+        console.error("Auto-complete failed", err);
+      }
+    }, 15000); // 15 seconds
+
     res.status(201).json(newOrder);
   } catch (error) {
     res.status(500).json({ message: 'Error creating lab order' });
