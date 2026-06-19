@@ -5,7 +5,19 @@ const getResultsByPatientId = async (req, res) => {
   try {
     const { patientId } = req.params;
     const results = await LabResult.find({ patientId }).sort({ orderedAt: -1 });
-    res.json(results);
+    
+    const mappedResults = results.map(r => {
+      const doc = r.toObject();
+      return {
+        ...doc,
+        resultValue: doc.results ? doc.results.value : null,
+        unit: doc.results ? doc.results.unit : null,
+        referenceRange: doc.results ? doc.results.referenceRange : null,
+        dateCollected: doc.completedAt
+      };
+    });
+    
+    res.json(mappedResults);
   } catch (error) {
     res.status(500).json({ message: 'Error retrieving lab results' });
   }
@@ -44,8 +56,10 @@ const createLabOrder = async (req, res) => {
 
         await LabResult.findByIdAndUpdate(newOrder._id, {
           status: 'Completed',
-          resultValue: mockResult,
-          dateCollected: new Date().toISOString()
+          results: {
+            value: mockResult
+          },
+          completedAt: new Date()
         });
         console.log(`Auto-completed lab order ${orderId} for ${testType}`);
       } catch(err) {
